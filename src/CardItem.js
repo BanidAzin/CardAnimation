@@ -51,6 +51,7 @@ const CardItem = ({
 
 const styles = StyleSheet.create({
   card: {
+    backgroundColor: "#fff",
     borderRadius: 30,
     width: wWidth * 0.9,
     height: wHeight * 0.5,
