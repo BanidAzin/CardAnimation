@@ -39,11 +39,11 @@ const CardItem = ({
   return (
     <PanGestureHandler onGestureEvent={gesture}>
       <Animated.View style={[styles.card, style, cardStyle]}>
-        <View style={[styles.childrenContainer]}>
-          <ScrollView scrollEnabled={index === arrayLength - 1 || dismissed}>
-            <CardRenderHtml source={card.source} />
-          </ScrollView>
-        </View>
+        <Animated.View style={[styles.childrenContainer]}>
+          {/* <ScrollView scrollEnabled={index === arrayLength - 1 || dismissed}> */}
+          <CardRenderHtml source={card.source} />
+          {/* </ScrollView> */}
+        </Animated.View>
       </Animated.View>
     </PanGestureHandler>
   );
@@ -51,7 +51,6 @@ const CardItem = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "white",
     borderRadius: 30,
     width: wWidth * 0.9,
     height: wHeight * 0.5,
