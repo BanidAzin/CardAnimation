@@ -14,31 +14,23 @@
         },
         {
             "id": 4,
-            "source": "<div><strong>Item 4's random HTML content.</strong></div>"
+            "source": "<div><strong>Item random HTML content 4.</strong></div>"
         },
         {
             "id": 5,
-            "source": "<span><p>Unrelated HTML for item 5.</p></span>"
+            "source": "<div><p>Random HTML content for item 5.</p></div>"
         },
         {
             "id": 6,
-            "source": "<div><em>Random HTML content for the sixth item.</em></div>"
+            "source": "<span><h2>Unrelated HTML for item 6.</h2></span>"
         },
         {
             "id": 7,
-            "source": "<p><strong>HTML content without a specific theme for item 7.</strong></p>"
+            "source": "<p><em>HTML content without a specific theme for item 7.</em></p>"
         },
         {
             "id": 8,
-            "source": "<div><p>Random HTML content for item 8.</p></div>"
-        },
-        {
-            "id": 9,
-            "source": "<span><h2>Unrelated HTML for item 9.</h2></span>"
-        },
-        {
-            "id": 10,
-            "source": "<p><em>HTML content without a specific theme for item 10.</em></p>"
+            "source": "<div><strong>Item random HTML content 8.</strong></div>"
         }
     ]
 }

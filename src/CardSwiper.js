@@ -1,13 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
-import {
-  runOnJS,
-  useAnimatedGestureHandler,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
-import { snapPoint } from "react-native-redash";
+import { useSharedValue } from "react-native-reanimated";
 import CardItem from "./CardItem";
+import SwiperDismissedCard from "./DismissedCardItem";
 
 //The number of visible cards in the bottom stack
 const VISIBILITY_INDEX = 3;
@@ -20,7 +15,7 @@ const DISMISSED_VISIBILITY_INDEX = 2;
 const VISIBLE_ITEMS_ARRAY = Array(VISIBILITY_INDEX).fill(1);
 const DISIMISSED_ITEMS_ARRAY = Array(DISMISSED_VISIBILITY_INDEX).fill(1);
 
-export const CardSwiper = ({ data }) => {
+export const CardSwiper = ({ data = [] }) => {
   const { height, width } = useWindowDimensions();
   /*
     Slice the data array based on VISIBILITY_INDEX because we want to display only a limited number of items.
@@ -35,7 +30,7 @@ export const CardSwiper = ({ data }) => {
     We should do this to limit the number of cards rendered at a time, otherwise it can affect the performance.
   */
   const [currentIndex, setCurrentIndex] = useState(data.length - 1);
-  const [callOnSwipeEnd, setCallOnSwipeEnd] = useState(false);
+  // const [callOnSwipeEnd, setCallOnSwipeEnd] = useState(false);
 
   const cardHeight = height * 0.5;
   const xSnapPoints = [-width, 0, width];
@@ -148,155 +143,6 @@ export const CardSwiper = ({ data }) => {
     setCurrentIndex(currentIndex - 1);
   };
 
-  //Array of gesture handlers to manage the bottom card stack
-  const gestureHandlers = VISIBLE_ITEMS_ARRAY.map((_, index) => {
-    return useAnimatedGestureHandler({
-      onStart: (_, context) => {
-        //Retrieve the current x and y position values stored in the sharedValues array and assign them to the context's startY and startX values.
-        context.startY = sharedValues[index].y.value;
-        context.startX = sharedValues[index].x.value;
-      },
-      onActive(event, context) {
-        //Activate horizonal pan gesture only on the last item of the bottom card stack
-        if (index === cardData.length - 1) {
-          //Ensuring the center card won't animate on the y axis
-          sharedValues[cardData.length - 1].y.value = cardItemCenterPosition;
-          sharedValues[cardData.length - 1].x.value =
-            event.translationX + context.startX;
-          return;
-        }
-
-        //Disable the swipeup gesture for the whole bottom card stack except the second last item
-        if (index !== cardData.length - 2) return;
-        //Animating second last item in the bottom card stack according to the pan gesture
-        sharedValues[cardData.length - 2].y.value =
-          event.translationY + context.startY;
-        //Animating last item in the bottom card stack according to the pan gesture of the second last item of the bottom card stack
-        sharedValues[cardData.length - 1].y.value =
-          cardItemCenterPosition + event.translationY;
-      },
-      onEnd: ({ velocityX, velocityY }) => {
-        //Activate horizonal pan gesture only on the last item of the bottom card stack
-        if (index === cardData.length - 1) {
-          const xDest = snapPoint(
-            sharedValues[index].x.value,
-            velocityX,
-            xSnapPoints
-          );
-
-          //Cancell horizontal animation if it doesn't have enough velocity
-          if (xDest === 0) {
-            sharedValues[cardData.length - 1].x.value = withTiming(0);
-          } else {
-            // const onSwipe = velocityX > 0 ? 'swipeRightHandler' : 'swipeLeftHandler';
-
-            sharedValues[index].x.value = withTiming(
-              Math.sign(velocityX) * hiddenTranslateX,
-              {},
-              () => {
-                runOnJS(horizontalSwipeHandler)();
-              }
-            );
-          }
-
-          return;
-        }
-
-        //To disable the pan gesture for the whole bottom card stack excpet the second last item
-        if (index !== cardData.length - 2) return;
-
-        const yDest = snapPoint(
-          sharedValues[index].y.value,
-          velocityY,
-          ySnapPoints
-        );
-
-        if (yDest < 0) {
-          //Animating the last item of the card stack to the dismissed card stack position
-          sharedValues[cardData.length - 1].y.value = withTiming(
-            -(cardHeight + height * 0.68)
-          );
-          //Animating the second last item of the card stack to the centre postion
-          sharedValues[cardData.length - 2].y.value = withTiming(
-            cardItemCenterPosition,
-            {},
-            () => {
-              runOnJS(swipeUpHandler)();
-            }
-          );
-        } else {
-          //Animating both last cards to it's original position because it didn't meet the required velocity
-          sharedValues[cardData.length - 1].y.value = withTiming(
-            cardItemCenterPosition
-          );
-          sharedValues[cardData.length - 2].y.value = withTiming(0, {});
-        }
-      },
-    });
-  });
-
-  const dismissedGestureHandlers = DISIMISSED_ITEMS_ARRAY.map((elem, index) => {
-    return useAnimatedGestureHandler({
-      onStart: (_, context) => {
-        // return if the card is not the last element of dismissedCards
-        if (
-          index !==
-          dismissedCards.slice(-DISMISSED_VISIBILITY_INDEX).length - 1
-        )
-          return;
-        // Y position of the card on top of the dismissed cards stack
-        context.dismissedStartY = dismissedSharedValues[index].y.value;
-        // Y position of the card on top of the cards stack in the bottom
-        context.startY = -(cardHeight + height * 0.1);
-        runOnJS(setCallOnSwipeEnd)(true);
-      },
-      onActive(event, context) {
-        if (
-          index !==
-          dismissedCards.slice(-DISMISSED_VISIBILITY_INDEX).length - 1
-        )
-          return;
-
-        dismissedSharedValues[index].y.value =
-          event.translationY + context.dismissedStartY;
-        sharedValues[cardData.length - 1].y.value =
-          event.translationY + context.startY;
-      },
-      onEnd: ({ velocityY }, context) => {
-        if (
-          index !==
-          dismissedCards.slice(-DISMISSED_VISIBILITY_INDEX).length - 1
-        )
-          return;
-
-        const yDest = snapPoint(
-          dismissedSharedValues[index].y.value,
-          velocityY,
-          [-cardHeight * 0.1, 0, cardHeight * 0.9]
-        );
-
-        if (yDest >= 0) {
-          dismissedSharedValues[index].y.value = withTiming(cardHeight * 0.26);
-          sharedValues[cardData.length - 1].y.value = withTiming(0, {}, () => {
-            if (callOnSwipeEnd) {
-              runOnJS(swipeDownHandler)();
-              runOnJS(setCallOnSwipeEnd)(false);
-            }
-          });
-        } else {
-          dismissedSharedValues[index].y.value = withTiming(
-            -(cardHeight * 0.9)
-          );
-          sharedValues[cardData.length - 1].y.value = withTiming(
-            -(cardHeight + height * 0.1)
-          );
-        }
-
-        context.onJourneyStart = context.onJourneyActive = 0;
-      },
-    });
-  });
-
   return (
     <View style={styles.container}>
       <View
@@ -308,17 +154,19 @@ export const CardSwiper = ({ data }) => {
           .slice(-DISMISSED_VISIBILITY_INDEX)
           .map((item, index) => {
             return (
-              <CardItem
+              <SwiperDismissedCard
                 key={item.id}
                 card={item}
-                dismissed={true}
                 index={index}
+                dismissedSharedValues={dismissedSharedValues}
                 arrayLength={
                   dismissedCards.slice(-DISMISSED_VISIBILITY_INDEX).length
                 }
-                gesture={dismissedGestureHandlers[index]}
-                sharedValues={dismissedSharedValues[index]}
+                sharedValues={sharedValues}
+                lastIndexOfCardData={cardData.length - 1}
                 style={{ height: cardHeight }}
+                horizontalSwipeHandler={horizontalSwipeHandler}
+                swipeDownHandler={swipeDownHandler}
               />
             );
           })}
@@ -338,10 +186,11 @@ export const CardSwiper = ({ data }) => {
               key={item.id}
               card={item}
               index={index}
+              sharedValues={sharedValues}
               arrayLength={cardData.length}
-              gesture={gestureHandlers[index]}
-              sharedValues={sharedValues[index]}
               style={{ height: cardHeight }}
+              horizontalSwipeHandler={horizontalSwipeHandler}
+              swipeUpHandler={swipeUpHandler}
             />
           );
         })}
@@ -353,5 +202,6 @@ export const CardSwiper = ({ data }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 20,
   },
 });
